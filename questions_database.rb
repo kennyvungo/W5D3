@@ -56,6 +56,10 @@ class User
     def followed_questions 
         QuestionFollow.followed_questions_for_user_id(self.id)
     end
+
+    def liked_questions
+        QuestionLike.liked_questions_for_user_id(self.id)
+    end
 end
 
 class Question
@@ -77,6 +81,10 @@ class Question
         SQL
     end
 
+    def self.most_followed(n)
+        QuestionFollow.most_followed_questions(n)
+    end
+
     def initialize(options)
         @id = options['id']
         @title = options['title']
@@ -95,6 +103,14 @@ class Question
     def followers 
         QuestionFollow.followers_for_question_id(self.id)
     end 
+
+    def likers
+        QuestionLike.likers_for_question_id(self.id)
+    end
+
+    def num_likes 
+        QuestionLike.num_likes_for_question_id(self.id)
+    end
 
 end
 
@@ -117,11 +133,23 @@ class QuestionFollow
 
     def self.followers_for_question_id(question_id)
         QuestionsDatabase.instance.execute(<<-SQL, question_id)
-                SELECT * FROM users u
-                JOIN question_follows q
-                ON q.user_id = u.id
-                WHERE question_id = ?
-            SQL
+            SELECT * FROM users u
+            JOIN question_follows q
+            ON q.user_id = u.id
+            WHERE question_id = ?
+        SQL
+    end
+
+    def self.most_followed_questions(n)
+        QuestionsDatabase.instance.execute(<<-SQL, n-1)
+            SELECT * FROM questions q
+            JOIN question_follows qf
+            ON qf.question_id = q.id
+            GROUP BY q.id
+            ORDER BY count(*) desc
+            LIMIT 1
+            OFFSET ?
+        SQL
     end
 
     def self.followed_questions_for_user_id(user_id)
@@ -207,7 +235,7 @@ class Reply
     end
 end
 
-class Like
+class QuestionLike
     attr_accessor :id,:user_id,:question_id
         def self.find_by_id(id)
         query = QuestionsDatabase.instance.execute(<<-SQL, id)
@@ -216,8 +244,48 @@ class Like
             SQL
 
         return nil unless query.length > 0
-        Like.new(query.first)
+        QuestionLike.new(query.first)
     end
+
+    def self.likers_for_question_id(question_id)
+        QuestionsDatabase.instance.execute(<<-SQL, question_id)
+            SELECT u.* FROM question_likes ql
+            JOIN users u 
+            ON ql.user_id = u.id
+            WHERE ql.question_id = ?;
+        SQL
+    end
+
+    def self.num_likes_for_question_id(question_id)
+        QuestionsDatabase.instance.execute(<<-SQL, question_id)
+            SELECT count(*) FROM question_likes ql
+            JOIN users u 
+            ON ql.user_id = u.id
+            WHERE ql.question_id = ?;
+        SQL
+    end
+
+    def self.liked_questions_for_user_id(user_id)
+        QuestionsDatabase.instance.execute(<<-SQL, user_id)
+            SELECT q.* FROM question_likes ql
+            JOIN questions q 
+            ON ql.question_id = q.id
+            WHERE ql.user_id = ?;
+        SQL
+    end
+
+    def self.most_liked_questions(n)
+        QuestionsDatabase.instance.execute(<<-SQL, n-1)
+            SELECT * FROM questions q
+            JOIN question_likes ql
+            ON ql.question_id = q.id
+            GROUP BY ql.question_id
+            ORDER BY count(*) desc
+            LIMIT 1
+            OFFSET ?;
+        SQL
+    end
+
 
     def initialize(options)
         @id = options['id']
