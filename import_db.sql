@@ -1,11 +1,17 @@
 -- Note from project:
 -- If you drop a table that is referenced by a foreign key in another table, you 
 -- will get an error telling you that you've violated the foreign key constraint.
+
 -- moved users to end but idk if anything else will break
 
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS replies;
+DROP TABLE IF EXISTS question_follows;
+DROP TABLE IF EXISTS question_likes;
 DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS users;
+
 
 CREATE TABLE questions(
     id INTEGER PRIMARY KEY,
@@ -16,31 +22,32 @@ CREATE TABLE questions(
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-DROP TABLE IF EXISTS question_follows;
 
 CREATE TABLE question_follows(
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     question_id INTEGER NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users(id)
-
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (question_id) REFERENCES questions(id)
 
 );
+
 
 CREATE TABLE replies(
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     question_id INTEGER NOT NULL,
     parent_reply_id INTEGER,
-    body, TEXT NOT NULL,
+    body TEXT NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users(id)
-    FOREIGN KEY (question_id) REFERENCES questions(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (question_id) REFERENCES questions(id),
     FOREIGN KEY (parent_reply_id) REFERENCES replies(id)
 
 );
+
+
 
 CREATE TABLE question_likes(
     id INTEGER PRIMARY KEY,
@@ -48,12 +55,11 @@ CREATE TABLE question_likes(
     question_id INTEGER NOT NULL,
     like_bool BOOLEAN,
 
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (question_id) REFERENCES questions(id)
-    FOREIGN KEY (parent_reply_id) REFERENCES replies(id)
 );
 
-DROP TABLE IF EXISTS users;
+
 
 CREATE TABLE users(
     id INTEGER PRIMARY KEY,
