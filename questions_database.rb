@@ -26,11 +26,19 @@ class User
         User.new(query.first)
     end
 
+    def self.all
+        data = QuestionsDatabase.instance.execute("SELECT * FROM users")
+        data.map { |datum| User.new(datum) }
+    end
+
+
+
     def initialize(options)
         @id = options['id']
         @fname = options['fname']
         @lname = options['lname']
     end
+  
 end
 
 class Question
@@ -74,7 +82,7 @@ class QuestionFollow
 end
 
 class Reply
-    :id,:question_id,:parent_reply_id,:author_id,:body
+    attr_accessor :id,:question_id,:parent_reply_id,:author_id,:body
         def self.find_by_id(id)
         query = QuestionsDatabase.instance.execute(<<-SQL, id)
                 SELECT * FROM replies
@@ -83,6 +91,11 @@ class Reply
 
         return nil unless query.length > 0
         Reply.new(query.first)
+    end
+
+    def self.all
+        data = QuestionsDatabase.instance.execute("SELECT * FROM replies")
+        data.map { |datum| Reply.new(datum) }
     end
 
     def initialize(options)
